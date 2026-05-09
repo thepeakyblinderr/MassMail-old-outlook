@@ -11,13 +11,15 @@ class PreviewDialog(QDialog):
     User can page through vendors with Prev / Next buttons.
     """
 
-    def __init__(self, vendors: list[dict], subject: str, html_body: str, parent=None):
+    def __init__(self, vendors: list[dict], subject: str, html_body: str, parent=None, *, cc: str = "", bcc: str = ""):
         super().__init__(parent)
         self.setWindowTitle("Email Preview")
         self.resize(700, 560)
         self.vendors = vendors
         self.subject = subject
         self.html_body = html_body
+        self.cc = cc
+        self.bcc = bcc
         self.current = 0
 
         self.setStyleSheet("""
@@ -84,9 +86,12 @@ class PreviewDialog(QDialog):
         subject = self.subject.replace("{{Name}}", name)
         body = self.html_body.replace("{{Name}}", name)
 
-        self.meta_label.setText(
-            f"<b>To:</b> {email} &nbsp;&nbsp; <b>Subject:</b> {subject}"
-        )
+        meta = f"<b>To:</b> {email} &nbsp;&nbsp; <b>Subject:</b> {subject}"
+        if self.cc:
+            meta += f"<br><b>CC:</b> {self.cc}"
+        if self.bcc:
+            meta += f"<br><b>BCC:</b> {self.bcc}"
+        self.meta_label.setText(meta)
         self.browser.setHtml(body)
 
         total = len(self.vendors)

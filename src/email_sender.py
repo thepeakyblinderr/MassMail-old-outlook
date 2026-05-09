@@ -15,12 +15,14 @@ class EmailSenderThread(QThread):
     finished = pyqtSignal(int, int)        # sent_count, failed_count
     error = pyqtSignal(str)               # fatal error (Outlook not found etc.)
 
-    def __init__(self, vendors, subject, html_body, attachments, parent=None):
+    def __init__(self, vendors, subject, html_body, attachments, cc="", bcc="", parent=None):
         super().__init__(parent)
         self.vendors = vendors
         self.subject = subject
         self.html_body = html_body
         self.attachments = attachments  # list of absolute file paths
+        self.cc = cc
+        self.bcc = bcc
         self._stop = False
 
     def stop(self):
@@ -65,6 +67,10 @@ class EmailSenderThread(QThread):
             try:
                 mail = outlook.CreateItem(0)  # olMailItem
                 mail.To = email
+                if self.cc:
+                    mail.CC = self.cc
+                if self.bcc:
+                    mail.BCC = self.bcc
                 mail.Subject = subject
                 mail.HTMLBody = html
 
