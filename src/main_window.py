@@ -110,8 +110,9 @@ QListWidget {
     border-radius: 6px;
     background: #ffffff;
     font-size: 13px;
+    color: #1f2937;
 }
-QListWidget::item { padding: 4px 8px; }
+QListWidget::item { padding: 4px 8px; color: #1f2937; }
 QListWidget::item:selected { background: #eff6ff; color: #1d4ed8; }
 """
 

@@ -104,6 +104,14 @@ class RichTextEditor(QWidget):
                 font-size: 12px;
                 min-width: 120px;
             }
+            QComboBox QAbstractItemView,
+            QFontComboBox QAbstractItemView {
+                background: #ffffff;
+                color: #1f2937;
+                selection-background-color: #eff6ff;
+                selection-color: #1d4ed8;
+                border: 1px solid #d1d5db;
+            }
         """)
 
         # Font family
