@@ -91,6 +91,7 @@ class RichTextEditor(QWidget):
                 border-radius: 4px;
                 padding: 2px 6px;
                 background: #ffffff;
+                color: #1f2937;
                 font-size: 12px;
                 min-width: 48px;
             }
@@ -99,6 +100,7 @@ class RichTextEditor(QWidget):
                 border-radius: 4px;
                 padding: 2px 4px;
                 background: #ffffff;
+                color: #1f2937;
                 font-size: 12px;
                 min-width: 120px;
             }
