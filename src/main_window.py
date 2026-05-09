@@ -20,6 +20,9 @@ STYLE = """
 QMainWindow, QWidget#root {
     background: #f3f4f6;
 }
+QLabel {
+    color: #1f2937;
+}
 QLabel#header_title {
     font-size: 22px;
     font-weight: bold;
@@ -107,8 +110,9 @@ QListWidget {
     border-radius: 6px;
     background: #ffffff;
     font-size: 13px;
+    color: #1f2937;
 }
-QListWidget::item { padding: 4px 8px; }
+QListWidget::item { padding: 4px 8px; color: #1f2937; }
 QListWidget::item:selected { background: #eff6ff; color: #1d4ed8; }
 """
 
@@ -246,6 +250,7 @@ class MainWindow(QMainWindow):
         cc_row = QHBoxLayout()
         cc_label = QLabel("CC:")
         cc_label.setFixedWidth(32)
+        cc_label.setStyleSheet("font-size:13px; color:#374151;")
         self.cc_input = QLineEdit()
         self.cc_input.setPlaceholderText("cc@example.com; cc2@example.com")
         cc_row.addWidget(cc_label)
@@ -254,6 +259,7 @@ class MainWindow(QMainWindow):
         bcc_row = QHBoxLayout()
         bcc_label = QLabel("BCC:")
         bcc_label.setFixedWidth(32)
+        bcc_label.setStyleSheet("font-size:13px; color:#374151;")
         self.bcc_input = QLineEdit()
         self.bcc_input.setPlaceholderText("bcc@example.com; bcc2@example.com")
         bcc_row.addWidget(bcc_label)
