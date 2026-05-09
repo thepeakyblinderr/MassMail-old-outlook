@@ -240,6 +240,27 @@ class MainWindow(QMainWindow):
         sl.addWidget(self.subject_input)
         layout.addWidget(subj_card)
 
+        # CC / BCC card
+        ccbcc_card, cl = _card()
+        cl.addWidget(_section_label("CC / BCC"))
+        cc_row = QHBoxLayout()
+        cc_label = QLabel("CC:")
+        cc_label.setFixedWidth(32)
+        self.cc_input = QLineEdit()
+        self.cc_input.setPlaceholderText("cc@example.com; cc2@example.com")
+        cc_row.addWidget(cc_label)
+        cc_row.addWidget(self.cc_input)
+        cl.addLayout(cc_row)
+        bcc_row = QHBoxLayout()
+        bcc_label = QLabel("BCC:")
+        bcc_label.setFixedWidth(32)
+        self.bcc_input = QLineEdit()
+        self.bcc_input.setPlaceholderText("bcc@example.com; bcc2@example.com")
+        bcc_row.addWidget(bcc_label)
+        bcc_row.addWidget(self.bcc_input)
+        cl.addLayout(bcc_row)
+        layout.addWidget(ccbcc_card)
+
         # Body card
         body_card, bl = _card()
         bl.addWidget(_section_label("EMAIL BODY"))
@@ -344,7 +365,9 @@ class MainWindow(QMainWindow):
             return
         subject = self.subject_input.text().strip() or "(no subject)"
         html = self.editor.toHtml()
-        dlg = PreviewDialog(self.vendors, subject, html, self)
+        cc = self.cc_input.text().strip()
+        bcc = self.bcc_input.text().strip()
+        dlg = PreviewDialog(self.vendors, subject, html, self, cc=cc, bcc=bcc)
         dlg.exec()
 
     def _send_emails(self):
@@ -376,8 +399,10 @@ class MainWindow(QMainWindow):
         self._sent = 0
         self._failed = 0
 
+        cc = self.cc_input.text().strip()
+        bcc = self.bcc_input.text().strip()
         self.sender_thread = EmailSenderThread(
-            self.vendors, subject, html, self.attachments
+            self.vendors, subject, html, self.attachments, cc=cc, bcc=bcc
         )
         self.sender_thread.progress.connect(self._on_progress)
         self.sender_thread.finished.connect(self._on_finished)
