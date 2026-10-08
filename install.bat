@@ -1,4 +1,6 @@
 @echo off
+rem pushd also works when this folder is on a network (UNC) path
+pushd "%~dp0"
 echo ============================================
 echo  MassMail - First Time Setup
 echo ============================================
@@ -20,4 +22,5 @@ echo.
 echo ============================================
 echo  Setup complete! Run MassMail with run.bat
 echo ============================================
+popd
 pause

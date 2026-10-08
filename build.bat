@@ -1,4 +1,6 @@
 @echo off
+rem pushd also works when this folder is on a network (UNC) path
+pushd "%~dp0"
 echo Installing dependencies...
 pip install -r requirements.txt
 
@@ -19,4 +21,5 @@ echo.
 echo ============================================
 echo  Done!  Find MassMail.exe in the dist/ folder
 echo ============================================
+popd
 pause
