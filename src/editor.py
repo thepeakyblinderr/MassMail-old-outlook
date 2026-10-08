@@ -1,14 +1,16 @@
 import base64
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtGui import (
     QAction, QColor, QFont, QIcon, QImage, QKeySequence,
-    QTextCharFormat, QTextCursor, QTextListFormat,
+    QTextCharFormat, QTextCursor, QTextDocument, QTextImageFormat, QTextListFormat,
 )
 from PyQt6.QtWidgets import (
     QColorDialog, QComboBox, QFileDialog, QFontComboBox,
     QHBoxLayout, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget,
 )
+
+from .html_utils import prepare_email_html
 
 
 class RichTextEditor(QWidget):
@@ -34,10 +36,11 @@ class RichTextEditor(QWidget):
                 border-top: none;
                 border-radius: 0 0 6px 6px;
                 padding: 12px;
-                font-size: 13px;
                 color: #1f2937;
             }
         """)
+        # Default font matches the toolbar and is what recipients see in Outlook
+        self.editor.document().setDefaultFont(QFont("Calibri", 12))
         # Force dark text regardless of system theme
         self.editor.document().setDefaultStyleSheet("body { color: #1f2937; background: #ffffff; }")
         palette = self.editor.palette()
@@ -47,6 +50,7 @@ class RichTextEditor(QWidget):
         self.editor.setPalette(palette)
 
         self.editor.currentCharFormatChanged.connect(self._update_toolbar_state)
+        self.editor.cursorPositionChanged.connect(self._update_alignment_state)
         layout.addWidget(self.editor)
 
     # ------------------------------------------------------------------
@@ -55,6 +59,13 @@ class RichTextEditor(QWidget):
 
     def toHtml(self) -> str:
         return self.editor.toHtml()
+
+    def toEmailHtml(self) -> str:
+        """HTML rewritten so Outlook shows the same formatting as the editor."""
+        return prepare_email_html(self.editor.toHtml())
+
+    def isEmpty(self) -> bool:
+        return self.editor.document().isEmpty()
 
     def setHtml(self, html: str):
         self.editor.setHtml(html)
@@ -188,7 +199,12 @@ class RichTextEditor(QWidget):
         self.act_right.setToolTip("Align right")
         self.act_right.triggered.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignRight))
 
-        for act in (self.act_left, self.act_center, self.act_right):
+        self.act_justify = QAction("☰J", tb)
+        self.act_justify.setCheckable(True)
+        self.act_justify.setToolTip("Justify")
+        self.act_justify.triggered.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignJustify))
+
+        for act in (self.act_left, self.act_center, self.act_right, self.act_justify):
             tb.addAction(act)
         self.act_left.setChecked(True)
 
@@ -267,9 +283,16 @@ class RichTextEditor(QWidget):
 
     def _set_alignment(self, alignment):
         self.editor.setAlignment(alignment)
-        self.act_left.setChecked(alignment == Qt.AlignmentFlag.AlignLeft)
-        self.act_center.setChecked(alignment == Qt.AlignmentFlag.AlignHCenter)
-        self.act_right.setChecked(alignment == Qt.AlignmentFlag.AlignRight)
+        self._update_alignment_state()
+
+    def _update_alignment_state(self):
+        alignment = self.editor.alignment()
+        self.act_center.setChecked(bool(alignment & Qt.AlignmentFlag.AlignHCenter))
+        self.act_right.setChecked(bool(alignment & Qt.AlignmentFlag.AlignRight))
+        self.act_justify.setChecked(bool(alignment & Qt.AlignmentFlag.AlignJustify))
+        self.act_left.setChecked(not (
+            self.act_center.isChecked() or self.act_right.isChecked() or self.act_justify.isChecked()
+        ))
 
     def _insert_bullet_list(self):
         cursor = self.editor.textCursor()
@@ -296,12 +319,23 @@ class RichTextEditor(QWidget):
         b64 = base64.b64encode(data).decode()
         data_uri = f"data:image/{ext};base64,{b64}"
 
-        cursor = self.editor.textCursor()
         img = QImage(path)
-        # Scale down if very large for display
-        if img.width() > 600:
-            img = img.scaledToWidth(600, Qt.TransformationMode.SmoothTransformation)
-        cursor.insertImage(img, data_uri)  # stores as resource keyed by data_uri
+        if img.isNull():
+            return
+        self.editor.document().addResource(
+            QTextDocument.ResourceType.ImageResource, QUrl(data_uri), img
+        )
+        # Scale down if very large; the size is written into the HTML so
+        # Outlook shows the image at the same size as the editor
+        fmt = QTextImageFormat()
+        fmt.setName(data_uri)
+        width, height = img.width(), img.height()
+        if width > 600:
+            height = round(height * 600 / width)
+            width = 600
+        fmt.setWidth(width)
+        fmt.setHeight(height)
+        self.editor.textCursor().insertImage(fmt)
 
     # ------------------------------------------------------------------
     # Helpers
