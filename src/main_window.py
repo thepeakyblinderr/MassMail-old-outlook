@@ -370,7 +370,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "No Vendors", "Please upload an Excel file first.")
             return
         subject = self.subject_input.text().strip() or "(no subject)"
-        html = self.editor.toHtml()
+        html = self.editor.toEmailHtml()
         cc = self.cc_input.text().strip()
         bcc = self.bcc_input.text().strip()
         dlg = PreviewDialog(self.vendors, subject, html, self, cc=cc, bcc=bcc)
@@ -384,10 +384,10 @@ class MainWindow(QMainWindow):
         if not subject:
             QMessageBox.warning(self, "No Subject", "Please enter a subject line.")
             return
-        html = self.editor.toHtml()
-        if not html.strip() or "<body></body>" in html:
+        if self.editor.isEmpty():
             QMessageBox.warning(self, "Empty Body", "Please compose an email body.")
             return
+        html = self.editor.toEmailHtml()
 
         reply = QMessageBox.question(
             self, "Confirm Send",
