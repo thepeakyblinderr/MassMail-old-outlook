@@ -6,7 +6,7 @@ from PyQt6.QtGui import (
     QTextCharFormat, QTextCursor, QTextDocument, QTextImageFormat, QTextListFormat,
 )
 from PyQt6.QtWidgets import (
-    QColorDialog, QComboBox, QFileDialog, QFontComboBox,
+    QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog,
     QHBoxLayout, QTextEdit, QToolBar, QToolButton, QVBoxLayout, QWidget,
 )
 
@@ -224,6 +224,13 @@ class RichTextEditor(QWidget):
 
         tb.addSeparator()
 
+        # Insert link
+        act_link = QAction("🔗 Link", tb)
+        act_link.setToolTip("Insert / edit hyperlink (Ctrl+K)")
+        act_link.setShortcut(QKeySequence("Ctrl+K"))
+        act_link.triggered.connect(self._insert_link)
+        tb.addAction(act_link)
+
         # Insert image
         act_img = QAction("🖼 Image", tb)
         act_img.setToolTip("Insert image into email body")
@@ -305,6 +312,41 @@ class RichTextEditor(QWidget):
         fmt = QTextListFormat()
         fmt.setStyle(QTextListFormat.Style.ListDecimal)
         cursor.createList(fmt)
+
+    def _insert_link(self):
+        cursor = self.editor.textCursor()
+        current = cursor.charFormat()
+        text = cursor.selectedText()
+        url, ok = QInputDialog.getText(
+            self, "Insert Link",
+            "Web address (URL):", text=current.anchorHref() if current.isAnchor() else "https://",
+        )
+        url = url.strip()
+        if not ok:
+            return
+        fmt = QTextCharFormat()
+        if not url or url == "https://":
+            # Empty address removes the link
+            fmt.setAnchor(False)
+            fmt.setAnchorHref("")
+            fmt.setFontUnderline(False)
+            fmt.setForeground(QColor("#1f2937"))
+            cursor.mergeCharFormat(fmt)
+            return
+        if not text:
+            text, ok = QInputDialog.getText(self, "Insert Link", "Text to display:", text=url)
+            if not ok:
+                return
+            text = text.strip() or url
+            cursor.insertText(text)
+            cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, len(text))
+        fmt.setAnchor(True)
+        fmt.setAnchorHref(url)
+        fmt.setFontUnderline(True)
+        fmt.setForeground(QColor("#0563c1"))
+        cursor.mergeCharFormat(fmt)
+        cursor.clearSelection()
+        self.editor.setTextCursor(cursor)
 
     def _insert_image(self):
         path, _ = QFileDialog.getOpenFileName(

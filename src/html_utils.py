@@ -77,6 +77,9 @@ def prepare_email_html(qt_html: str) -> str:
         r"<(%s)(\s[^>]*)?>" % "|".join(_BLOCK_TAGS), add_base_font, html, flags=re.IGNORECASE
     )
 
+    # Make bare http(s) URLs clickable (Outlook doesn't auto-link them in HTML mail)
+    html = _linkify(html)
+
     # Preserve runs of spaces (Qt relies on white-space:pre-wrap, Outlook doesn't)
     html = _preserve_spaces(html)
 
@@ -166,3 +169,28 @@ def _fix_img(m) -> str:
     if "border" not in attrs:
         attrs += ' border="0"'
     return f"<img{attrs} />"
+
+
+_URL_RE = re.compile(r"(https?://[^\s<>\"']+[^\s<>\"'.,;:!?)\]])")
+
+
+def _linkify(html: str) -> str:
+    """Wrap plain-text URLs in <a> tags, leaving existing links untouched."""
+    out, pos, in_anchor = [], 0, False
+    for tag in re.finditer(r"<(/?)a\b[^>]*>|<[^>]+>", html):
+        chunk = html[pos:tag.start()]
+        out.append(chunk if in_anchor else _URL_RE.sub(_wrap_url, chunk))
+        out.append(tag.group(0))
+        if tag.group(0).lower().startswith("<a ") or tag.group(0).lower() == "<a>":
+            in_anchor = True
+        elif tag.group(0).lower() == "</a>":
+            in_anchor = False
+        pos = tag.end()
+    chunk = html[pos:]
+    out.append(chunk if in_anchor else _URL_RE.sub(_wrap_url, chunk))
+    return "".join(out)
+
+
+def _wrap_url(m) -> str:
+    url = m.group(1)
+    return f'<a href="{url}"><span style="text-decoration:underline; color:#0563c1">{url}</span></a>'
