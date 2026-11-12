@@ -21,8 +21,8 @@ class EmailSenderThread(QThread):
         self.subject = subject
         self.html_body = html_body
         self.attachments = attachments  # list of absolute file paths
-        self.cc = cc
-        self.bcc = bcc
+        self.cc = _normalize_recipients(cc)
+        self.bcc = _normalize_recipients(bcc)
         self._stop = False
 
     def stop(self):
@@ -128,3 +128,9 @@ def _process_inline_images(html_body: str) -> tuple[str, list[tuple[str, str]]]:
 
     modified = re.sub(r'src="(data:image/[^"]+)"', replace, html_body, flags=re.DOTALL)
     return modified, temp_images
+
+
+def _normalize_recipients(text: str) -> str:
+    """Accept commas, semicolons, spaces or new lines; Outlook wants semicolons."""
+    parts = [p for p in re.split(r"[;,\s]+", text or "") if p]
+    return "; ".join(parts)
